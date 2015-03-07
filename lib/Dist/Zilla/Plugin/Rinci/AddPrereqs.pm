@@ -24,6 +24,12 @@ sub munge_files {
     return;
 }
 
+sub _add_prereq {
+    my ($self, $mod, $ver) = @_;
+    $self->log_debug("Adding prereq: $mod => $ver");
+    $self->zilla->register_prereqs({phase=>'runtime'}, $mod, $ver);
+}
+
 sub _add_prereqs_from_func_meta {
     my ($self, $meta) = @_;
 
@@ -37,8 +43,7 @@ sub _add_prereqs_from_func_meta {
             # skip builtin deps supported by Perinci::Sub::DepChecker
             next if /\A(any|all|none|env|code|prog|pkg|func|exec|
                          tmp_dir|trash_dir|undo_trash_dir)\z/x;
-            $self->zilla->register_prereqs(
-                {phase=>'runtime'}, "Perinci::Sub::Dep::$_"=>0);
+            $self->_add_prereq("Perinci::Sub::Dep::$_"=>0);
         }
     }
 
@@ -50,13 +55,11 @@ sub _add_prereqs_from_func_meta {
             my $e;
             $e = $arg_spec->{'x.schema.entity'};
             if ($e) {
-                $self->zilla->register_prereqs(
-                    {phase=>'runtime'}, "Perinci::Sub::ArgEntity::$e"=>0);
+                $self->_add_prereq("Perinci::Sub::ArgEntity::$e"=>0);
             }
             $e = $arg_spec->{'x.schema.element_entity'};
             if ($e) {
-                $self->zilla->register_prereqs(
-                    {phase=>'runtime'}, "Perinci::Sub::ArgEntity::$e"=>0);
+                $self->_add_prereq("Perinci::Sub::ArgEntity::$e"=>0);
             }
         }
     }
@@ -69,9 +72,9 @@ sub munge_file {
 
     local @INC = ('lib', @INC);
 
-    if ($file->name =~ m!^lib/((.+)\.pm)$!) {
-        my $pkg = $2; $pkg =~ s!/!::!g;
-        require $1;
+    if (my ($pkg_pm, $pkg) = $file->name =~ m!^lib/((.+)\.pm)$!) {
+        $pkg =~ s!/!::!g;
+        require $pkg_pm;
         my $spec = \%{"$pkg\::SPEC"};
         for my $func (grep {/\A\w+\z/} sort keys %$spec) {
             $self->_add_prereqs_from_func_meta($spec->{$func});
