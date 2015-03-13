@@ -176,6 +176,8 @@ This plugin will also search all Perinci::CmdLine-based scripts, request
 metadata from all local Riap URI's used by the scripts, and add prereqs for the
 above plus:
 
+=over
+
 =item *
 
 Add prereq for the module specified in the Riap URL. So for example if script
