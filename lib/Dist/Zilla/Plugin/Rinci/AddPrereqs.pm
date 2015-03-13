@@ -42,7 +42,7 @@ sub _add_prereq {
     my ($self, $mod, $ver) = @_;
     return if defined($self->{_added_prereqs}{$mod}) &&
         $self->{_added_prereqs}{$mod} >= $ver;
-    $self->log_debug("Adding prereq: $mod => $ver");
+    $self->log("Adding prereq: $mod => $ver");
     $self->zilla->register_prereqs({phase=>'runtime'}, $mod, $ver);
     $self->{_added_prereqs}{$mod} = $ver;
 }
