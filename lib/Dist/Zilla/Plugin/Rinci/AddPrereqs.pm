@@ -13,12 +13,26 @@ with (
     'Dist::Zilla::Role::FileFinderUser' => {
         default_finders => [':InstallModules', ':ExecFiles'],
     },
+    'Pod::Weaver::Role::DumpPerinciCmdLineScript',
 );
 
+use Perinci::Access;
 use Perinci::Sub::Normalize qw(normalize_function_metadata);
 
 sub munge_files {
     my $self = shift;
+
+    # roughly list all packages in this dist, from the filenames. XXX does dzil
+    # already provide this?
+    my %pkgs;
+    for (@{ $self->found_files }) {
+        next unless $_->name =~ m!\Alib/(.+)\.pm\z!;
+        my $pkg = $1; $pkg =~ s!/!::!g;
+        $pkgs{$pkg} = $_->name;
+    }
+    $self->{_packages} = \%pkgs;
+
+    $self->{_added_prereqs} = {};
 
     $self->munge_file($_) for @{ $self->found_files };
     return;
@@ -26,19 +40,21 @@ sub munge_files {
 
 sub _add_prereq {
     my ($self, $mod, $ver) = @_;
+    return if defined($self->{_added_prereqs}{$mod}) &&
+        $self->{_added_prereqs}{$mod} >= $ver;
     $self->log_debug("Adding prereq: $mod => $ver");
     $self->zilla->register_prereqs({phase=>'runtime'}, $mod, $ver);
+    $self->{_added_prereqs}{$mod} = $ver;
 }
 
 sub _add_prereqs_from_func_meta {
-    my ($self, $meta) = @_;
+    my ($self, $meta, $is_cli) = @_;
 
     $meta = normalize_function_metadata($meta);
 
     # from deps, XXX support digging into 'any' and 'all'
     if (my $deps = $meta->{deps}) {
-        $self->zilla->register_prereqs(
-            {phase=>'runtime'}, "Perinci::Sub::DepChecker"=>0);
+        $self->_add_prereq("Perinci::Sub::DepChecker"=>0);
         for (keys %$deps) {
             # skip builtin deps supported by Perinci::Sub::DepChecker
             next if /\A(any|all|none|env|code|prog|pkg|func|exec|
@@ -47,7 +63,9 @@ sub _add_prereqs_from_func_meta {
         }
     }
 
+    # from x.schema.{entity,element_entity} (cli script only)
     {
+        last unless $is_cli;
         my $args = $meta->{args};
         last unless $args;
         for my $arg_name (keys %$args) {
@@ -70,17 +88,60 @@ sub munge_file {
 
     my ($self, $file) = @_;
 
+    state $pa = Perinci::Access->new;
+
     local @INC = ('lib', @INC);
 
     if (my ($pkg_pm, $pkg) = $file->name =~ m!^lib/((.+)\.pm)$!) {
         $pkg =~ s!/!::!g;
         require $pkg_pm;
         my $spec = \%{"$pkg\::SPEC"};
+        $self->log_debug(["Found module with non-empty %%SPEC: %s (%s)", $file->name, $pkg])
+            if keys %$spec;
         for my $func (grep {/\A\w+\z/} sort keys %$spec) {
-            $self->_add_prereqs_from_func_meta($spec->{$func});
+            $self->_add_prereqs_from_func_meta($spec->{$func}, 0);
         }
     } else {
-        # XXX script currently not yet supported
+        my $res = $self->dump_perinci_cmdline_script({
+            filename => $file->name,
+            zilla => $self->zilla,
+        });
+        if ($res->[0] == 412) {
+            $self->log_debug(["Skipped %s: %s",
+                              $file->name, $res->[1]]);
+            return;
+        }
+        $self->log_fatal(["Can't dump Perinci::CmdLine script '%s': %s - %s",
+                          $file->name, $res->[0], $res->[1]]) unless $res->[0] == 200;
+        my $cli = $res->[2];
+
+        $self->log_debug(["Found Perinci::CmdLine-based script: %s", $file->name]);
+
+        my @urls;
+        push @urls, $cli->{url};
+        if ($cli->{subcommands} && ref($cli->{subcommands}) eq 'HASH') {
+            push @urls, $_->{url} for values %{ $cli->{subcommands} };
+        }
+        my %seen_urls;
+        for my $url (@urls) {
+            next unless defined $url;
+            next if $seen_urls{$url}++;
+
+            # only inspect local function Riap URL
+            next unless $url =~ m!\A(?:pl:)?/(.+)/[^/]+\z!;
+
+            # add prereq to package, unless it's from our own dist
+            my $pkg = $1; $pkg =~ s!/!::!g;
+            $self->_add_prereq($pkg => 0) unless $self->{_packages}{$pkg};
+
+            # get its metadata
+            $self->log_debug(["Performing Riap request: meta => %s", $url]);
+            my $res = $pa->request(meta => $url);
+            $self->log_fatal(["Can't meta %s: %s-%s", $url, $res->[0], $res->[1]])
+                unless $res->[0] == 200;
+            my $meta = $res->[2];
+            $self->_add_prereqs_from_func_meta($meta, 1);
+        }
     }
 }
 
@@ -99,7 +160,8 @@ In C<dist.ini>:
 
 =head1 DESCRIPTION
 
-This plugin will add prereqs for the following:
+This plugin will search Rinci metadata in all modules and add prereqs for the
+following:
 
 =over
 
@@ -107,6 +169,18 @@ This plugin will add prereqs for the following:
 
 For every dependency mentioned in C<deps> property in function metadata, will
 add a prereq to C<Perinci::Sub::Dep::NAME>.
+
+=back
+
+This plugin will also search all Perinci::CmdLine-based scripts, request
+metadata from all local Riap URI's used by the scripts, and add prereqs for the
+above plus:
+
+=item *
+
+Add prereq for the module specified in the Riap URL. So for example if script
+refers to C</Perinci/Examples/some_func>, then a prerequisite will be added for
+C<Perinci::Examples> (unless it's from the same distribution).
 
 =item *
 
