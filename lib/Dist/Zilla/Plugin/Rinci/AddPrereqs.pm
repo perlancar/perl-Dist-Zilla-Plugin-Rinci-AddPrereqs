@@ -13,7 +13,7 @@ with (
     'Dist::Zilla::Role::FileFinderUser' => {
         default_finders => [':InstallModules', ':ExecFiles'],
     },
-    'Pod::Weaver::Role::DumpPerinciCmdLineScript',
+    'Dist::Zilla::Role::DumpPerinciCmdLineScript',
 );
 
 use Perinci::Access;
@@ -102,10 +102,7 @@ sub munge_file {
             $self->_add_prereqs_from_func_meta($spec->{$func}, 0);
         }
     } else {
-        my $res = $self->dump_perinci_cmdline_script({
-            filename => $file->name,
-            zilla => $self->zilla,
-        });
+        my $res = $self->dump_perinci_cmdline_script($file);
         if ($res->[0] == 412) {
             $self->log_debug(["Skipped %s: %s",
                               $file->name, $res->[1]]);
