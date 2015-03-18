@@ -129,6 +129,8 @@ sub munge_file {
 
             # add prereq to package, unless it's from our own dist
             my $pkg = $1; $pkg =~ s!/!::!g;
+            next if $pkg eq 'main';
+
             $self->_add_prereq($pkg => 0) unless $self->{_packages}{$pkg};
 
             # get its metadata
