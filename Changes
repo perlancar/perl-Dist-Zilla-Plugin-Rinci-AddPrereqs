@@ -1,5 +1,10 @@
 Revision history for Dist-Zilla-Plugin-Rinci-AddPrereqs
 
+0.05    2015-03-18 (PERLANCAR)
+
+	- Skip if script refers to Riap URL '/main/*'.
+
+
 0.04    2015-03-17 (PERLANCAR)
 
 	- No functional changes.
