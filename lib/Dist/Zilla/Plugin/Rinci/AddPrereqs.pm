@@ -80,13 +80,13 @@ sub _add_prereqs_from_func_meta {
                 $self->_add_prereq("Perinci::Sub::ArgEntity::$e"=>0);
             }
             $e = $arg_spec->{'x.completion'};
-            die "x.completion must be an array" unless ref($e) eq 'ARRAY';
             if ($e) {
+                die "x.completion must be an array" unless ref($e) eq 'ARRAY';
                 $self->_add_prereq("Perinci::Sub::XCompletion::$e->[0]"=>0);
             }
             $e = $arg_spec->{'x.element_completion'};
-            die "x.element_completion must be an array" unless ref($e) eq 'ARRAY';
             if ($e) {
+                die "x.element_completion must be an array" unless ref($e) eq 'ARRAY';
                 $self->_add_prereq("Perinci::Sub::XCompletion::$e->[0]"=>0);
             }
         }
