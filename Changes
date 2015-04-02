@@ -1,5 +1,10 @@
 Revision history for Dist-Zilla-Plugin-Rinci-AddPrereqs
 
+0.06    2015-04-02 (PERLANCAR)
+
+	- Add prereq to Perinci::Sub::XCompletion::*.
+
+
 0.05    2015-03-18 (PERLANCAR)
 
 	- Skip if script refers to Riap URL '/main/*'.
