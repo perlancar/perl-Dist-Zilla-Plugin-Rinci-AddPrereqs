@@ -63,7 +63,7 @@ sub _add_prereqs_from_func_meta {
         }
     }
 
-    # from x.schema.{entity,element_entity} (cli script only)
+    # from x.schema.{entity,element_entity} & x.completion (cli script only)
     {
         last unless $is_cli;
         my $args = $meta->{args};
@@ -79,8 +79,19 @@ sub _add_prereqs_from_func_meta {
             if ($e) {
                 $self->_add_prereq("Perinci::Sub::ArgEntity::$e"=>0);
             }
+            $e = $arg_spec->{'x.completion'};
+            die "x.completion must be an array" unless ref($e) eq 'ARRAY';
+            if ($e) {
+                $self->_add_prereq("Perinci::Sub::XCompletion::$e->[0]"=>0);
+            }
+            $e = $arg_spec->{'x.element_completion'};
+            die "x.element_completion must be an array" unless ref($e) eq 'ARRAY';
+            if ($e) {
+                $self->_add_prereq("Perinci::Sub::XCompletion::$e->[0]"=>0);
+            }
         }
     }
+
 }
 
 sub munge_file {
@@ -187,6 +198,12 @@ C<Perinci::Examples> (unless it's from the same distribution).
 
 For every entity mentioned in C<x.schema.entity> or C<x.schema.element_entity>
 in function metadata, will add a prereq to C<Perinci::Sub::ArgEntity::NAME>.
+
+=item *
+
+For every completion mentioned in C<x.completion> or C<x.element_completion> in
+function metadata (which have the value of C<[NAME, ARGS]>), will add a prereq
+to corresponding C<Perinci::Sub::XCompletion::NAME>.
 
 =back
 
