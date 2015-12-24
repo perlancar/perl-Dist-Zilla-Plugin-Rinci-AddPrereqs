@@ -48,6 +48,8 @@ sub _add_prereq {
 }
 
 sub _add_prereqs_from_func_meta {
+    require Perinci::Sub::Util::PropertyModule;
+
     my ($self, $meta, $is_cli) = @_;
 
     $meta = normalize_function_metadata($meta);
@@ -92,6 +94,11 @@ sub _add_prereqs_from_func_meta {
         }
     }
 
+    # property modules
+    {
+        my $mods = Perinci::Sub::Util::PropertyModule::get_required_property_modules($meta);
+        $self->_add_prereq($_ => 0) for @$mods;
+    }
 }
 
 sub munge_file {
