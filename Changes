@@ -1,5 +1,11 @@
 Revision history for Dist-Zilla-Plugin-Rinci-AddPrereqs
 
+0.08    2016-05-20 (PERLANCAR)
+
+	- Add prereq to Sah coercion rule modules
+	  (Data::Sah::Coerce::perl::*) specified in argument schema.
+
+
 0.07    2015-12-25 (PERLANCAR)
 
 	- Add prereq to required Perinci::Sub::Property::* modules.
