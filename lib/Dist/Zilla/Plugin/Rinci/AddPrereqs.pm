@@ -66,6 +66,7 @@ sub _add_prereqs_from_func_meta {
     }
 
     # from x.schema.{entity,element_entity} & x.completion (cli script only)
+    # from x.perl.coerce_from and x.coerce_from in argument schema's attributes
     {
         last unless $is_cli;
         my $args = $meta->{args};
@@ -90,6 +91,21 @@ sub _add_prereqs_from_func_meta {
             if ($e) {
                 die "x.element_completion must be an array" unless ref($e) eq 'ARRAY';
                 $self->_add_prereq("Perinci::Sub::XCompletion::$e->[0]"=>0);
+            }
+
+            my $sch = $arg_spec->{'schema'};
+            if ($sch) {
+                my $type = $sch->[0];
+                $e = $sch->[1]{'x.coerce_from'};
+                if ($e) {
+                    $self->_add_prereq("Data::Sah::Coerce::perl::$type\::$_"=>0)
+                        for @$e;
+                }
+                $e = $sch->[1]{'x.perl.coerce_from'};
+                if ($e) {
+                    $self->_add_prereq("Data::Sah::Coerce::perl::$type\::$_"=>0)
+                        for @$e;
+                }
             }
         }
     }
