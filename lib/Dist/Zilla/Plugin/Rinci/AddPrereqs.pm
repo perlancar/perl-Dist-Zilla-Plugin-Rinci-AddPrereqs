@@ -50,7 +50,7 @@ sub _add_prereq {
 sub _add_prereqs_from_func_meta {
     require Perinci::Sub::Util::PropertyModule;
 
-    my ($self, $meta, $is_cli) = @_;
+    my ($self, $meta, $cli_info) = @_;
 
     $meta = normalize_function_metadata($meta);
 
@@ -65,15 +65,16 @@ sub _add_prereqs_from_func_meta {
         }
     }
 
-    # from x.schema.{entity,element_entity} & x.completion (cli script only)
-    # from x.perl.coerce_from and x.coerce_from in argument schema's attributes
     {
-        last unless $is_cli;
+        last unless $cli_info;
         my $args = $meta->{args};
         last unless $args;
         for my $arg_name (keys %$args) {
             my $arg_spec = $args->{$arg_name};
             my $e;
+
+            # from x.schema.{entity,element_entity} & x.completion (cli scripts
+            # only)
             $e = $arg_spec->{'x.schema.entity'};
             if ($e) {
                 $self->_add_prereq("Perinci::Sub::ArgEntity::$e"=>0);
@@ -93,18 +94,21 @@ sub _add_prereqs_from_func_meta {
                 $self->_add_prereq("Perinci::Sub::XCompletion::$e->[0]"=>0);
             }
 
+            # from schema (coerce rule modules, etc) (cli scripts only)
             my $sch = $arg_spec->{'schema'};
             if ($sch) {
-                my $type = $sch->[0];
-                $e = $sch->[1]{'x.coerce_from'};
-                if ($e) {
-                    $self->_add_prereq("Data::Sah::Coerce::perl::$type\::$_"=>0)
-                        for @$e;
-                }
-                $e = $sch->[1]{'x.perl.coerce_from'};
-                if ($e) {
-                    $self->_add_prereq("Data::Sah::Coerce::perl::$type\::$_"=>0)
-                        for @$e;
+                state $plc = do {
+                    require Data::Sah;
+                    Data::Sah->new->get_compiler('perl');
+                };
+                my $cd = $plc->compile(schema => $sch);
+                for my $mod (@{ $cd->{modules} }) {
+                    if ($cli_info->[3]{'func.is_inline'}) {
+                        next unless $mod->{phase} eq 'runtime';
+                    } else {
+                        next unless $mod->{phase} eq 'compile';
+                    }
+                    $self->_add_prereq($mod->{name} => $mod->{version} // 0);
                 }
             }
         }
@@ -145,6 +149,7 @@ sub munge_file {
         $self->log_fatal(["Can't dump Perinci::CmdLine script '%s': %s - %s",
                           $file->name, $res->[0], $res->[1]]) unless $res->[0] == 200;
         my $cli = $res->[2];
+        my $cli_info = $res->[3]{'func.detect_res'};
 
         $self->log_debug(["Found Perinci::CmdLine-based script: %s", $file->name]);
 
@@ -173,7 +178,7 @@ sub munge_file {
             $self->log_fatal(["Can't meta %s: %s-%s", $url, $res->[0], $res->[1]])
                 unless $res->[0] == 200;
             my $meta = $res->[2];
-            $self->_add_prereqs_from_func_meta($meta, 1);
+            $self->_add_prereqs_from_func_meta($meta, $cli_info);
         }
     }
 }
