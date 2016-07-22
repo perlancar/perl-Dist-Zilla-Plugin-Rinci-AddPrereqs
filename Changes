@@ -1,5 +1,10 @@
 Revision history for Dist-Zilla-Plugin-Rinci-AddPrereqs
 
+0.10    2016-07-22 (PERLANCAR)
+
+	- Handle (skip) non-OnDisk files.
+
+
 0.09    2016-06-02 (PERLANCAR)
 
         - Fix/update to Data::Sah 0.79 which provides more complete information
