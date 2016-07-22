@@ -126,6 +126,11 @@ sub munge_file {
 
     my ($self, $file) = @_;
 
+    unless ($file->isa("Dist::Zilla::File::OnDisk")) {
+        $self->log_debug(["skipping %s: not an ondisk file, currently only ondisk files are processed", $file->name]);
+        return;
+    }
+
     state $pa = Perinci::Access->new;
 
     local @INC = ('lib', @INC);
