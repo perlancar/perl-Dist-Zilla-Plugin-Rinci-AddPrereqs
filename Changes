@@ -1,5 +1,13 @@
 Revision history for Dist-Zilla-Plugin-Rinci-AddPrereqs
 
+0.11    2016-08-31 (PERLANCAR)
+
+	- Get CLI's function meta from dump result, which still works when
+	  Riap URL package is main.
+
+	- Add prereq to Sah::Schema::* even though not from CLI.
+
+
 0.10    2016-07-22 (PERLANCAR)
 
 	- Handle (skip) non-OnDisk files.
