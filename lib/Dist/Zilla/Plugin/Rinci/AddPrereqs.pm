@@ -173,17 +173,24 @@ sub munge_file {
 
             # add prereq to package, unless it's from our own dist
             my $pkg = $1; $pkg =~ s!/!::!g;
-            next if $pkg eq 'main';
 
-            $self->_add_prereq($pkg => 0) unless $self->{_packages}{$pkg};
+            my @metas;
+            if ($pkg eq 'main') {
+                my $fmetas = $res->[3]{'func.meta'};
+                next unless $fmetas;
+                push @metas, values %$fmetas;
+            } else {
+                $self->_add_prereq($pkg => 0) unless $self->{_packages}{$pkg};
+                $self->log_debug(["Performing Riap request: meta => %s", $url]);
+                my $res = $pa->request(meta => $url);
+                $self->log_fatal(["Can't meta %s: %s-%s", $url, $res->[0], $res->[1]])
+                    unless $res->[0] == 200;
+                push @metas, $res->[2];
+            }
 
-            # get its metadata
-            $self->log_debug(["Performing Riap request: meta => %s", $url]);
-            my $res = $pa->request(meta => $url);
-            $self->log_fatal(["Can't meta %s: %s-%s", $url, $res->[0], $res->[1]])
-                unless $res->[0] == 200;
-            my $meta = $res->[2];
-            $self->_add_prereqs_from_func_meta($meta, $cli_info);
+            for my $meta (@metas) {
+                $self->_add_prereqs_from_func_meta($meta, $cli_info);
+            }
         }
     }
 }
