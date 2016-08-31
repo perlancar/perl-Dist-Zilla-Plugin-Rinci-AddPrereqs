@@ -66,7 +66,6 @@ sub _add_prereqs_from_func_meta {
     }
 
     {
-        last unless $cli_info;
         my $args = $meta->{args};
         last unless $args;
         for my $arg_name (keys %$args) {
@@ -76,20 +75,20 @@ sub _add_prereqs_from_func_meta {
             # from x.schema.{entity,element_entity} & x.completion (cli scripts
             # only)
             $e = $arg_spec->{'x.schema.entity'};
-            if ($e) {
+            if ($e && $cli_info) {
                 $self->_add_prereq("Perinci::Sub::ArgEntity::$e"=>0);
             }
             $e = $arg_spec->{'x.schema.element_entity'};
-            if ($e) {
+            if ($e && $cli_info) {
                 $self->_add_prereq("Perinci::Sub::ArgEntity::$e"=>0);
             }
             $e = $arg_spec->{'x.completion'};
-            if ($e) {
+            if ($e && $cli_info) {
                 die "x.completion must be an array" unless ref($e) eq 'ARRAY';
                 $self->_add_prereq("Perinci::Sub::XCompletion::$e->[0]"=>0);
             }
             $e = $arg_spec->{'x.element_completion'};
-            if ($e) {
+            if ($e && $cli_info) {
                 die "x.element_completion must be an array" unless ref($e) eq 'ARRAY';
                 $self->_add_prereq("Perinci::Sub::XCompletion::$e->[0]"=>0);
             }
@@ -103,7 +102,7 @@ sub _add_prereqs_from_func_meta {
                 };
                 my $cd = $plc->compile(schema => $sch);
                 for my $mod (@{ $cd->{modules} }) {
-                    if ($cli_info->[3]{'func.is_inline'}) {
+                    if ($cli_info && $cli_info->[3]{'func.is_inline'}) {
                         next unless $mod->{phase} eq 'runtime';
                     } else {
                         next unless $mod->{phase} eq 'compile';
@@ -142,6 +141,7 @@ sub munge_file {
         $self->log_debug(["Found module with non-empty %%SPEC: %s (%s)", $file->name, $pkg])
             if keys %$spec;
         for my $func (grep {/\A\w+\z/} sort keys %$spec) {
+            $self->log_debug(["Found function from \%%SPEC: %s\::%s", $pkg, $func]);
             $self->_add_prereqs_from_func_meta($spec->{$func}, 0);
         }
     } else {
