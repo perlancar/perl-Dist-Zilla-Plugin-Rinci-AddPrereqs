@@ -1,5 +1,14 @@
 Revision history for Dist-Zilla-Plugin-Rinci-AddPrereqs
 
+0.12    2016-09-29 (PERLANCAR)
+
+	- [Bugfix] No need to add prereqs from Sah schema unless for CLI
+	  scripts.
+
+	- Extract functionality to detect required Perinci::Sub::Dep::*
+	  modules to Perinci::Sub::Util::DepModule.
+
+
 0.11    2016-08-31 (PERLANCAR)
 
 	- Get CLI's function meta from dump result, which still works when
