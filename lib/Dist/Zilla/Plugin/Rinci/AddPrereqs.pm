@@ -48,21 +48,15 @@ sub _add_prereq {
 }
 
 sub _add_prereqs_from_func_meta {
-    require Perinci::Sub::Util::PropertyModule;
 
     my ($self, $meta, $cli_info) = @_;
 
     $meta = normalize_function_metadata($meta);
 
-    # from deps, XXX support digging into 'any' and 'all'
-    if (my $deps = $meta->{deps}) {
-        $self->_add_prereq("Perinci::Sub::DepChecker"=>0);
-        for (keys %$deps) {
-            # skip builtin deps supported by Perinci::Sub::DepChecker
-            next if /\A(any|all|none|env|code|prog|pkg|func|exec|
-                         tmp_dir|trash_dir|undo_trash_dir)\z/x;
-            $self->_add_prereq("Perinci::Sub::Dep::$_"=>0);
-        }
+    {
+        require Perinci::Sub::Util::DepModule;
+        my $mods = Perinci::Sub::Util::DepModule::get_required_dep_modules($meta);
+        $self->_add_prereq($_ => $mods->{$_}) for keys %$mods;
     }
 
     {
@@ -115,6 +109,7 @@ sub _add_prereqs_from_func_meta {
 
     # property modules
     {
+        require Perinci::Sub::Util::PropertyModule;
         my $mods = Perinci::Sub::Util::PropertyModule::get_required_property_modules($meta);
         $self->_add_prereq($_ => 0) for @$mods;
     }
