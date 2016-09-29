@@ -88,15 +88,17 @@ sub _add_prereqs_from_func_meta {
             }
 
             # from schema (coerce rule modules, etc) (cli scripts only)
-            my $sch = $arg_spec->{'schema'};
-            if ($sch) {
+            {
+                last unless $cli_info;
+                my $sch = $arg_spec->{'schema'};
+                last unless $sch;
                 state $plc = do {
                     require Data::Sah;
                     Data::Sah->new->get_compiler('perl');
                 };
                 my $cd = $plc->compile(schema => $sch);
                 for my $mod (@{ $cd->{modules} }) {
-                    if ($cli_info && $cli_info->[3]{'func.is_inline'}) {
+                    if ($cli_info->[3]{'func.is_inline'}) {
                         next unless $mod->{phase} eq 'runtime';
                     } else {
                         next unless $mod->{phase} eq 'compile';
