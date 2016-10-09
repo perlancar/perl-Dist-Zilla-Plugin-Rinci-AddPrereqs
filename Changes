@@ -1,5 +1,11 @@
 Revision history for Dist-Zilla-Plugin-Rinci-AddPrereqs
 
+0.13    2016-10-09 (PERLANCAR)
+
+	- [Bugfix] We should be skipping non-ondisk modules only, we can
+	  already process non-ondisk scripts.
+
+
 0.12    2016-09-29 (PERLANCAR)
 
 	- [Bugfix] No need to add prereqs from Sah schema unless for CLI
