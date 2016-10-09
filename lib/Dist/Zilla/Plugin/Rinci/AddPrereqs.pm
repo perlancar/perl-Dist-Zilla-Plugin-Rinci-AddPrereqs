@@ -122,16 +122,18 @@ sub munge_file {
 
     my ($self, $file) = @_;
 
-    unless ($file->isa("Dist::Zilla::File::OnDisk")) {
-        $self->log_debug(["skipping %s: not an ondisk file, currently only ondisk files are processed", $file->name]);
-        return;
-    }
-
     state $pa = Perinci::Access->new;
 
     local @INC = ('lib', @INC);
 
     if (my ($pkg_pm, $pkg) = $file->name =~ m!^lib/((.+)\.pm)$!) {
+        # XXX to support non-ondisk modules later, we can dump to some $tmpdir
+        # and add $tmpdir to @INC.
+        unless ($file->isa("Dist::Zilla::File::OnDisk")) {
+            $self->log_debug(["skipping module %s: not an ondisk file, currently only ondisk modules are processed", $file->name]);
+            return;
+        }
+
         $pkg =~ s!/!::!g;
         require $pkg_pm;
         my $spec = \%{"$pkg\::SPEC"};
