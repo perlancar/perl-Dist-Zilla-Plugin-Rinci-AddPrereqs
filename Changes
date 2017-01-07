@@ -1,5 +1,3 @@
-Revision history for Dist-Zilla-Plugin-Rinci-AddPrereqs
-
 0.13    2016-10-09 (PERLANCAR)
 
 	- [Bugfix] We should be skipping non-ondisk modules only, we can
