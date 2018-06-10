@@ -18,6 +18,8 @@ with (
 
 use Perinci::Access;
 use Perinci::Sub::Normalize qw(normalize_function_metadata);
+use PMVersions::Util qw(version_from_pmversions);
+use Version::Util qw(max_version);
 
 sub munge_files {
     my $self = shift;
@@ -70,21 +72,25 @@ sub _add_prereqs_from_func_meta {
             # only)
             $e = $arg_spec->{'x.schema.entity'};
             if ($e && $cli_info) {
-                $self->_add_prereq("Perinci::Sub::ArgEntity::$e"=>0);
+                my $pkg = "Perinci::Sub::ArgEntity::$e";
+                $self->_add_prereq($pkg => version_from_pmversions($pkg) // 0);
             }
             $e = $arg_spec->{'x.schema.element_entity'};
             if ($e && $cli_info) {
-                $self->_add_prereq("Perinci::Sub::ArgEntity::$e"=>0);
+                my $pkg = "Perinci::Sub::ArgEntity::$e";
+                $self->_add_prereq($pkg => version_from_pmversions($pkg) // 0);
             }
             $e = $arg_spec->{'x.completion'};
             if ($e && $cli_info) {
                 die "x.completion must be an array" unless ref($e) eq 'ARRAY';
-                $self->_add_prereq("Perinci::Sub::XCompletion::$e->[0]"=>0);
+                my $pkg = "Perinci::Sub::XCompletion::$e->[0]";
+                $self->_add_prereq($pkg => version_from_pmversions($pkg) // 0);
             }
             $e = $arg_spec->{'x.element_completion'};
             if ($e && $cli_info) {
                 die "x.element_completion must be an array" unless ref($e) eq 'ARRAY';
-                $self->_add_prereq("Perinci::Sub::XCompletion::$e->[0]"=>0);
+                my $pkg = "Perinci::Sub::XCompletion::$e->[0]";
+                $self->_add_prereq($pkg => version_from_pmversions($pkg) // 0);
             }
 
             # from schema (coerce rule modules, etc) (cli scripts only)
@@ -103,7 +109,7 @@ sub _add_prereqs_from_func_meta {
                     } else {
                         next unless $mod->{phase} eq 'compile';
                     }
-                    $self->_add_prereq($mod->{name} => $mod->{version} // 0);
+                    $self->_add_prereq($mod->{name} => max_version($mod->{version} // 0, version_from_pmversions($mod->{name})));
                 }
             }
         }
@@ -113,7 +119,7 @@ sub _add_prereqs_from_func_meta {
     {
         require Perinci::Sub::Util::PropertyModule;
         my $mods = Perinci::Sub::Util::PropertyModule::get_required_property_modules($meta);
-        $self->_add_prereq($_ => 0) for @$mods;
+        $self->_add_prereq($_ => version_from_pmversions($_) // 0) for @$mods;
     }
 }
 
@@ -179,7 +185,8 @@ sub munge_file {
                 next unless $fmetas;
                 push @metas, values %$fmetas;
             } else {
-                $self->_add_prereq($pkg => 0) unless $self->{_packages}{$pkg};
+                $self->_add_prereq($pkg => version_from_pmversions($pkg) // 0)
+                    unless $self->{_packages}{$pkg};
                 $self->log_debug(["Performing Riap request: meta => %s", $url]);
                 my $res = $pa->request(meta => $url);
                 $self->log_fatal(["Can't meta %s: %s-%s", $url, $res->[0], $res->[1]])
