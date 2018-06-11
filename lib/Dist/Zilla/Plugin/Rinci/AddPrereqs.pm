@@ -58,7 +58,7 @@ sub _add_prereqs_from_func_meta {
     {
         require Perinci::Sub::Util::DepModule;
         my $mods = Perinci::Sub::Util::DepModule::get_required_dep_modules($meta);
-        $self->_add_prereq($_ => $mods->{$_}) for keys %$mods;
+        $self->_add_prereq($_ => $mods->{$_} // 0) for keys %$mods;
     }
 
     {
