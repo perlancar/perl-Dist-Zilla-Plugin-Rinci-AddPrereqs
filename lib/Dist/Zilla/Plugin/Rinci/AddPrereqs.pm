@@ -109,7 +109,10 @@ sub _add_prereqs_from_func_meta {
                     } else {
                         next unless $mod->{phase} eq 'compile';
                     }
-                    $self->_add_prereq($mod->{name} => max_version($mod->{version} // 0, version_from_pmversions($mod->{name})));
+                    $self->_add_prereq($mod->{name} => max_version(
+                        $mod->{version} // 0,
+                        version_from_pmversions($mod->{name}) // 0,
+                    ));
                 }
             }
         }
