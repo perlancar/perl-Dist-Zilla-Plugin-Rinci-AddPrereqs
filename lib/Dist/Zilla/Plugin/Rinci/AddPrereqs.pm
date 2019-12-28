@@ -82,14 +82,28 @@ sub _add_prereqs_from_func_meta {
             }
             $e = $arg_spec->{'x.completion'};
             if ($e && $cli_info) {
-                die "x.completion must be an array" unless ref($e) eq 'ARRAY';
-                my $pkg = "Perinci::Sub::XCompletion::$e->[0]";
+                my $xcomp_name;
+                if (ref $e eq 'CODE') {
+                    # can't do anything about it for now
+                } elsif (ref $e eq 'ARRAY') {
+                    $xcomp_name = $e->[0];
+                } else {
+                    $xcomp_name = $e;
+                }
+                my $pkg = "Perinci::Sub::XCompletion::$xcomp_name";
                 $self->_add_prereq($pkg => version_from_pmversions($pkg) // 0);
             }
             $e = $arg_spec->{'x.element_completion'};
             if ($e && $cli_info) {
-                die "x.element_completion must be an array" unless ref($e) eq 'ARRAY';
-                my $pkg = "Perinci::Sub::XCompletion::$e->[0]";
+                my $xcomp_name;
+                if (ref $e eq 'CODE') {
+                    # can't do anything about it for now
+                } elsif (ref $e eq 'ARRAY') {
+                    $xcomp_name = $e->[0];
+                } else {
+                    $xcomp_name = $e;
+                }
+                my $pkg = "Perinci::Sub::XCompletion::$xcomp_name";
                 $self->_add_prereq($pkg => version_from_pmversions($pkg) // 0);
             }
 
