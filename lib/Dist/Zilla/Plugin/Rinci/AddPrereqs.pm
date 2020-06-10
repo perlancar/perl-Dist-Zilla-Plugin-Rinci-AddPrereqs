@@ -1,6 +1,8 @@
 package Dist::Zilla::Plugin::Rinci::AddPrereqs;
 
+# AUTHORITY
 # DATE
+# DIST
 # VERSION
 
 use 5.010001;
@@ -82,16 +84,18 @@ sub _add_prereqs_from_func_meta {
             }
             $e = $arg_spec->{'x.completion'};
             if ($e && $cli_info) {
-                my $xcomp_name;
-                if (ref $e eq 'CODE') {
-                    # can't do anything about it for now
-                } elsif (ref $e eq 'ARRAY') {
-                    $xcomp_name = $e->[0];
-                } else {
-                    $xcomp_name = $e;
+                {
+                    my $xcomp_name;
+                    if (ref $e eq 'ARRAY') {
+                        $xcomp_name = $e->[0];
+                    } elsif (!ref $e) {
+                        $xcomp_name = $e;
+                    } else {
+                        $self->log_fatal("Can't handle x.completion value $e");
+                    }
+                    my $pkg = "Perinci::Sub::XCompletion::$xcomp_name";
+                    $self->_add_prereq($pkg => version_from_pmversions($pkg) // 0);
                 }
-                my $pkg = "Perinci::Sub::XCompletion::$xcomp_name";
-                $self->_add_prereq($pkg => version_from_pmversions($pkg) // 0);
             }
             $e = $arg_spec->{'x.element_completion'};
             if ($e && $cli_info) {
