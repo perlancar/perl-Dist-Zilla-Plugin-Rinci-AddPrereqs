@@ -2,3 +2,4 @@ Dist-Zilla-Plugin-Rinci-AddPrereqs-*
 .build
 *~
 nytprof*
+.DS_Store
